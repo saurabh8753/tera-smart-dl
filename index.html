@@ -196,10 +196,10 @@ document.getElementById("downloadBtn").onclick = async ()=>{
   url = normalize(url);
   if(!url.startsWith("http")) url = "https://" + url;
 
-  const api = 
-    "https://iteraplay.com/api/play.php?url=" +
-    encodeURIComponent(url) +
-    "&key=iTeraPlay2025";
+  /* 🔥 YOUR WORKER API (NO CORS ERROR) */
+  const api =
+    "https://terafetch.yaartunah.workers.dev/?url=" +
+    encodeURIComponent(url);
 
   try{
     const res = await fetch(api);
@@ -214,6 +214,7 @@ document.getElementById("downloadBtn").onclick = async ()=>{
     let file = json.list[0];
     let link = file.fast_download_link || file.download_link;
 
+    /* Force HTTPS */
     if(link.startsWith("http://")){
       link = link.replace("http://", "https://");
     }
