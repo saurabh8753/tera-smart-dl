@@ -1,235 +1,143 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>TeraBox Smart Downloader — iTeraPlay</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TeraBox Smart Downloader</title>
 
 <style>
   body{
     margin:0;
-    font-family:Inter,system-ui,Segoe UI;
+    padding:0;
     background:#eef3ff;
+    font-family: Inter, sans-serif;
   }
-  .wrap{
-    max-width:900px;
-    margin:30px auto;
-    padding:16px;
-  }
-  .card{
+  .box{
+    max-width:480px;
+    margin:40px auto;
     background:#fff;
-    padding:22px;
+    padding:25px;
     border-radius:20px;
-    box-shadow:0 12px 26px rgba(0,0,0,.09);
-  }
-
-  .title{
+    box-shadow:0 8px 25px rgba(0,0,0,0.08);
     text-align:center;
+  }
+  h1{
     font-size:28px;
+    margin-bottom:10px;
+    color:#2b3bf3;
     font-weight:800;
-    color:#2f34e8;
   }
-
-  #tbxUrl{
+  input{
     width:100%;
-    padding:14px 16px;
+    padding:15px;
     border-radius:14px;
-    border:1px solid #ccc;
-    font-size:16px;
-    margin-top:12px;
+    border:1px solid #d7d9ef;
+    font-size:15px;
+    background:#f8f9ff;
   }
-
   .btn{
-    padding:14px 26px;
-    border:0;
-    border-radius:14px;
-    font-size:17px;
-    font-weight:700;
-    color:white;
-    cursor:pointer;
-    margin:6px;
-  }
-  .openBtn{ background:#4f46e5; }
-  .downloadBtn{ background:#e91e63; }
-
-  .loader{
-    width:28px;
-    height:28px;
-    border:4px solid #ddd;
-    border-top-color:#4f46e5;
-    border-radius:50%;
-    animation:spin 1s linear infinite;
-    margin:15px auto;
-    display:none;
-  }
-  @keyframes spin{
-    to{ transform:rotate(360deg); }
-  }
-
-  .note{
-    text-align:center;
-    margin:16px 0;
-    padding:10px 16px;
-    color:#ff4d4d;
-    background:rgba(255,0,0,0.15);
-    border:1px solid rgba(255,0,0,0.4);
-    border-radius:14px;
-  }
-
-  #msg{
-    margin-top:10px;
-    font-size:16px;
-    color:#333;
-    text-align:center;
-  }
-
-  #downloadBox{
-    display:none;
     margin-top:18px;
-    padding:16px;
+    display:block;
+    width:100%;
+    padding:15px;
+    background:#4f46e5;
+    color:#fff;
     border-radius:14px;
-    background:#f8f8ff;
-    border:1px solid #ccc;
-    text-align:center;
+    font-size:18px;
+    font-weight:700;
+    border:0;
+    cursor:pointer;
   }
-
-  #finalDownload{
-    background:#ff0066;
-    padding:12px 22px;
-    color:white;
-    font-size:16px;
-    border-radius:12px;
+  #downloadBox{
+    margin-top:20px;
+    display:none;
+  }
+  .dBtn{
+    background:#e61e66;
+    padding:14px;
+    border-radius:14px;
+    color:#fff;
+    font-size:18px;
+    display:block;
+    text-align:center;
     text-decoration:none;
     font-weight:700;
-    display:inline-block;
+  }
+  .note{
+    padding:10px;
+    background:#ffe5e5;
+    color:#c40000;
+    border-radius:10px;
+    margin-top:15px;
+    font-size:14px;
   }
 </style>
 </head>
 
 <body>
 
-<div class="wrap">
-  <div class="card">
+<div class="box">
+  <h1>TeraBox Smart Downloader</h1>
 
-    <div class="title">TeraBox Smart Downloader</div>
+  <input id="tbxUrl" type="url" placeholder="Paste your TeraBox link here">
 
-    <input id="tbxUrl" type="url" placeholder="Paste TeraBox link…">
+  <button class="btn" onclick="generateDownload()">Generate Download</button>
 
-    <div style="text-align:center;margin-top:18px;">
-      <button class="btn openBtn" id="openPopup">▶ Open Video</button>
-      <button class="btn downloadBtn" id="downloadBtn">⬇ Generate Download</button>
-    </div>
-
-    <p class="note">⚠ Turn on Mobile Auto-Rotate for Full-Screen video.</p>
-
-    <div class="loader" id="loader"></div>
-    <div id="msg"></div>
-
-    <div id="downloadBox">
-      <h3>Download Ready 🎉</h3>
-      <a id="finalDownload" href="#" target="_blank">Download Video</a>
-      <p style="font-size:13px;color:#666">If download doesn't start, tap again.</p>
-    </div>
-
+  <div id="downloadBox">
+    <a id="downloadBtn" href="#" class="dBtn" download>⬇ Download Video</a>
   </div>
+
+  <div class="note">
+    ⚠ Turn on Mobile Auto-Rotate for Full-Screen video.
+  </div>
+
+  <p id="error" style="color:red; display:none; margin-top:10px;">
+    ⚠ Invalid link or network error!
+  </p>
 </div>
 
+
 <script>
-/* Mirror domains */
-const mirrors = [
-  "1024tera.com","1024terabox.com","nephobox.com",
-  "gibibox.com","4funbox.com","teraboxurl.com",
-  "teraboxlink.com","teraboxapp.com","teraboxcdn.com"
-];
+async function generateDownload() {
+  const url = document.getElementById("tbxUrl").value.trim();
+  const error = document.getElementById("error");
+  const box = document.getElementById("downloadBox");
+  const btn = document.getElementById("downloadBtn");
 
-/* Normalize mirrors → terabox.com */
-function normalize(url){
-  mirrors.forEach(m => url = url.replace(m,"terabox.com"));
-  return url;
-}
+  error.style.display = "none";
+  box.style.display = "none";
 
-/* Auto detect TeraBox URL */
-function autoDetect(text){
-  const p = mirrors.join("|").replace(/\./g,"\\.");
-  const r = new RegExp(`(https?:\\/\\/(?:www\\.)?(?:${p}|terabox\\.com)\\/s\\/[^\\s]+)`,"i");
-  const m = text.match(r);
-  return m ? m[1] : "";
-}
+  if (!url) {
+    error.innerHTML = "⚠ Enter a valid TeraBox link.";
+    error.style.display = "block";
+    return;
+  }
 
-const input = document.getElementById("tbxUrl");
-input.addEventListener("input", ()=>{
-  const d = autoDetect(input.value);
-  if(d) input.value = normalize(d);
-});
-
-/* Open Video Button */
-document.getElementById("openPopup").onclick = ()=>{
-  let url = input.value.trim();
-  if(!url) return alert("Enter valid link");
-
-  url = normalize(url);
-  if(!url.startsWith("http")) url = "https://" + url;
-
-  const final = 
-    "https://iteraplay.com/api/play.php?url=" +
+  const api =
+    "https://iteraplay.com/api/json.php?url=" +
     encodeURIComponent(url) +
     "&key=iTeraPlay2025";
 
-  window.open(final, "_blank");
-};
-
-/* SMART DOWNLOADER */
-document.getElementById("downloadBtn").onclick = async ()=>{
-
-  let url = input.value.trim();
-  if(!url) return alert("Enter valid link");
-
-  const loader = document.getElementById("loader");
-  const msg = document.getElementById("msg");
-  const box = document.getElementById("downloadBox");
-  const finalBtn = document.getElementById("finalDownload");
-
-  loader.style.display = "block";
-  msg.innerText = "Generating Download Link…";
-  box.style.display = "none";
-
-  url = normalize(url);
-  if(!url.startsWith("http")) url = "https://" + url;
-
-  /* 🔥 YOUR WORKER API (NO CORS ERROR) */
-  const api =
-    "https://terafetch.yaartunah.workers.dev/?url=" +
-    encodeURIComponent(url);
-
-  try{
+  try {
     const res = await fetch(api);
-    const json = await res.json();
+    const data = await res.json();
 
-    if(json.status !== "success"){
-      msg.innerText = "❌ Invalid or expired link!";
-      loader.style.display = "none";
+    if (!data.status || !data.list || data.list.length === 0) {
+      error.innerHTML = "⚠ Invalid or expired TeraBox link.";
+      error.style.display = "block";
       return;
     }
 
-    let file = json.list[0];
-    let link = file.fast_download_link || file.download_link;
+    const file = data.list[0];
+    btn.href = file.download_link;
 
-    /* Force HTTPS */
-    if(link.startsWith("http://")){
-      link = link.replace("http://", "https://");
-    }
-
-    finalBtn.href = link;
-    msg.innerText = "✔ Download Ready!";
     box.style.display = "block";
 
-  }catch(e){
-    msg.innerText = "⚠ Network error. Try again!";
+  } catch (e) {
+    error.innerHTML = "⚠ Network error!";
+    error.style.display = "block";
   }
-
-  loader.style.display = "none";
-};
-
+}
 </script>
 
 </body>
